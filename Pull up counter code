@@ -1,0 +1,117 @@
+//Austin Zimmers
+//based off https://www.instructables.com/id/Pull-Up-Counter/
+
+#include <NewPing.h>
+#include <LiquidCrystal.h>
+/*-----( Declare Constants and Pin Numbers )-----*/
+#define TRIGGER_PIN  10  // Arduino pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN  8  // Arduino pin tied to echo pin on the ultrasonic sensor.
+#define MAX_DISTANCE  200
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); 
+/*-----( Declare Variables )-----*/
+int LEDPin = 11; //An LED to indicate when pull up is reached
+LiquidCrystal lcd(13, 12, 5, 4, 3, 2);
+int distance; //A varible to hold distance from ultrasonic
+int pullUp = 0; //used to count pullups
+boolean isUp = false; //flag for knowing our state. 
+int buttonPin = 9;
+int buttonState = 0;
+int maxpull = 0; //kepp track of max
+
+long subtract = 0; //to help with timing reset
+
+void setup()   /****** SETUP: RUNS ONCE ******/
+{
+  Serial.begin(9600);
+  pinMode(LEDPin, OUTPUT); // Use LED indicator (if required)
+  pinMode(buttonPin, INPUT);
+  lcd.begin(16, 2); // lcd rows and columns
+  lcd.print("Pull-Ups:"); // title of sorts
+
+  lcd.setCursor(0, 1);
+  lcd.print("Max:");
+
+  lcd.setCursor(7, 1);
+  lcd.print("time:");
+}//--(end setup )---
+
+
+void loop()   /****** LOOP: RUNS CONSTANTLY ******/
+{
+
+  buttonState = digitalRead(buttonPin);
+  if (buttonState == HIGH) {  //This button is to re-set the pull up counter, but save max counter!!
+    pullUp = 0;
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Pull-Ups:"); 
+    lcd.setCursor(10, 0);
+    
+    lcd.print(pullUp);
+
+    lcd.setCursor(5, 1);
+    lcd.print(maxpull);
+    lcd.setCursor(0, 1);
+    lcd.print("Max:");
+
+    
+    subtract = millis(); // to reset time
+
+    lcd.setCursor(7, 1);
+    lcd.print("time:");
+    
+  }
+  delay(50);
+  distance = sonar.ping_cm();
+  
+  if( distance > 25 && isUp ){
+    isUp = false;  
+    digitalWrite(LEDPin, LOW);
+  }
+  
+  if( distance < 24 && distance != 0 && !isUp){ 
+      isUp = true;
+      pullUp ++;
+
+       if(maxpull < pullUp){
+         maxpull = pullUp;
+       }
+       
+      digitalWrite(LEDPin, HIGH);
+      lcd.setCursor(10, 0);
+      lcd.print(pullUp);
+
+      lcd.setCursor(5, 1);
+      lcd.print(maxpull);
+
+      lcd.setCursor(7, 1);
+      lcd.print("time:");
+
+      
+      lcd.setCursor(12, 1);
+      lcd.print((millis() - subtract) / 1000);
+      
+      delay(50);
+  } 
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Pull-Ups:"); // title of sorts
+    lcd.setCursor(10, 0);
+    
+    lcd.print(pullUp);
+
+    lcd.setCursor(5, 1);
+    lcd.print(maxpull);
+    lcd.setCursor(0, 1);
+    lcd.print("Max:");
+
+    lcd.setCursor(7, 1);
+    lcd.print("time:");
+
+      lcd.setCursor(12, 1);
+      lcd.print((millis() - subtract) / 1000);
+  
+
+ 
+}
